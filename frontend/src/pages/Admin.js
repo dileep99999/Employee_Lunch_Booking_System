@@ -23,7 +23,7 @@ const Admin = () => {
         };
 
         fetchBookings();
-    }, []);
+    }, [navigate]);
 
     const downloadPDF = async () => {
         try {
