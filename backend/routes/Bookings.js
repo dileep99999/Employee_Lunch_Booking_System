@@ -101,7 +101,7 @@ router.get("/download", async (req, res) => {
     const bookings = await Booking.find({
       date: { $gte: startDate.toISOString(), $lte: endDate.toISOString() },
     });
-
+    console.log("Fetched bookings:", bookings); 
     const doc = new PDFDocument();
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename=bookings_report.pdf');
