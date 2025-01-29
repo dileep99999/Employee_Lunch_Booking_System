@@ -13,18 +13,21 @@ const BookingForm = () => {
   useEffect(() => {
     const currentTime = new Date();
     const cutoffTime = new Date();
-    cutoffTime.setHours(9, 30, 0, 0); // 9:30 AM of today
+    cutoffTime.setHours(9, 30, 0, 0); // 9:30 AM local time
 
-    // If the current time is past 9:30 AM, automatically set the date to the next day
+    let bookingDate = new Date(); // Start with today’s date
+
+    // If the current time is past 9:30 AM, set the date to the next day
     if (currentTime > cutoffTime) {
-      const nextDay = new Date();
-      nextDay.setDate(nextDay.getDate() + 1);
-      setDate(nextDay.toISOString().split("T")[0]); // Set the date field to the next day
+      bookingDate.setDate(bookingDate.getDate() + 1);
       setError("It is past 9:30 AM. The booking is for the next day.");
     } else {
-      setDate(currentTime.toISOString().split("T")[0]); // Otherwise, set today's date
       setError(""); // Clear any error messages
     }
+
+    // Convert to YYYY-MM-DD format in local time
+    const formattedDate = bookingDate.toLocaleDateString("en-CA"); // 'en-CA' ensures YYYY-MM-DD format
+    setDate(formattedDate);
   }, []);
 
   const handleSubmit = async (e) => {
@@ -41,7 +44,7 @@ const BookingForm = () => {
 
     // Submit the booking to the backend
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/bookings`, newBooking);
+      const response = await axios.post("https://employee-lunch-booking-system-5.onrender.com/bookings", newBooking);
       console.log("Booking submitted:", response.data);
       alert("Booking submitted successfully!");
     } catch (error) {
@@ -81,15 +84,12 @@ const BookingForm = () => {
           />
         </label>
         <label>
-        Meal:
-        <select
-          value={meal}
-          onChange={(e) => setMeal(e.target.value)}
-          required
-        >
-          <option value="Lunch">Lunch</option>
-        </select>
-      </label>
+          Meal:
+          <select value={meal} onChange={(e) => setMeal(e.target.value)} required>
+            <option value="" disabled>Select a meal</option>
+            <option value="Lunch">Lunch</option>
+          </select>
+        </label>
 
         <label>
           Date:
@@ -98,7 +98,7 @@ const BookingForm = () => {
             value={date}
             onChange={(e) => setDate(e.target.value)}
             required
-            disabled={false} // Allow user to pick date if it's not changed automatically
+            disabled // Disable manual date changes
           />
         </label>
         {error && <p style={{ color: "red" }}>{error}</p>}
