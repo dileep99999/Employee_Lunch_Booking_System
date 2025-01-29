@@ -44,7 +44,7 @@ const BookingForm = () => {
 
     // Submit the booking to the backend
     try {
-      const response = await axios.post("https://ltl.onrender.com/bookings", newBooking);
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/bookings`, newBooking);
       console.log("Booking submitted:", response.data);
       alert("Booking submitted successfully!");
     } catch (error) {
