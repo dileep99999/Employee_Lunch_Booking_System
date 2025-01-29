@@ -2,8 +2,24 @@ const express = require("express");
 const Booking = require("../models/Booking");  // Import the Booking model
 const moment = require("moment");  // Import moment for date handling
 const PDFDocument = require("pdfkit");  // Import PDFKit for generating PDF
+const jwt = require("jsonwebtoken");  // Import JWT for authentication
 const router = express.Router();
-
+// Middleware for verifying admin JWT
+const protectAdmin = (req, res, next) => {
+  const token = req.headers.authorization && req.headers.authorization.split(' ')[1];
+  console.log("Token received in middleware:", token);  // Log token for debugging
+  if (!token) {
+    return res.status(401).json({ message: "No token, authorization denied" });
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.admin = decoded;  // Attach admin info to request
+    next();
+  } catch (error) {
+    console.error("Token verification failed:", error);
+    res.status(401).json({ message: "Token is not valid" });
+  }
+};
 // Delete bookings after 2:00 PM for today
 const deleteBookingsAfter2PM = async () => {
   const currentTime = moment();
