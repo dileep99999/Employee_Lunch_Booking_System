@@ -99,96 +99,72 @@ router.get("/counts", async (req, res) => {
   }
 });
 
-// Download the bookings as a PDF
 router.get("/download", async (req, res) => {
   try {
     const currentTime = moment();
-    const cutoffTime = currentTime.set({ hour: 14, minute: 0, second: 0 });
+    const cutoffTime = moment().set({ hour: 14, minute: 0, second: 0 }); // 2:00 PM cutoff
 
-    let bookings;
+    let startDate, endDate;
+
     if (currentTime.isBefore(cutoffTime)) {
-      // Fetch today's bookings only if before 2:00 PM
-      bookings = await Booking.find({
-        date: { $gte: currentTime.startOf("day").toISOString() },
-      });
+      // Before 2:00 PM, fetch today's (30th) bookings
+      startDate = moment().startOf("day"); // 30th 00:00 AM
+      endDate = moment().set({ hour: 13, minute: 59, second: 59 }); // 30th 1:59 PM
     } else {
-      // Fetch tomorrow's bookings if it's after 2:00 PM
-      bookings = await Booking.find({
-        date: { $gte: currentTime.add(1, "days").startOf("day").toISOString() },
-      });
+      // After 2:00 PM, fetch tomorrow's (31st) bookings
+      startDate = moment().startOf("day").add(1, "days").set({ hour: 14, minute: 0, second: 0 }); // 30th 2:00 PM onward
+      endDate = moment().startOf("day").add(2, "days").set({ hour: 13, minute: 59, second: 59 }); // 31st 1:59 PM
     }
+
+    // Fetch bookings between startDate and endDate
+    const bookings = await Booking.find({
+      date: { $gte: startDate.toISOString(), $lte: endDate.toISOString() },
+    });
 
     const doc = new PDFDocument();
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename=bookings_report.pdf');
-
     doc.pipe(res);
 
-    // Title of the document
-    doc.fontSize(20).text("Bookings Report", { align: 'center' });
-    doc.moveDown();
+    // PDF Title
+    doc.fontSize(20).text("Bookings Report", { align: 'center' }).moveDown();
 
-    // Table layout settings
-    const startX = 50;  // Starting x position
-    const startY = 100;  // Starting y position (after the title)
-    const columnWidth = 80;  // Width of each column
-    const signColumnWidth = 100;  // Width of "Sign" column
-    const rowHeight = 40;  // Height of each row (for spacing)
-    const totalWidth = columnWidth * 5 + signColumnWidth;  // Total table width (with sign column)
-
-    // Draw a box around the whole table (includes headers and rows)
-    doc.rect(startX - 10, startY - 10, totalWidth + 20, (bookings.length * rowHeight) + 60).stroke();  // Adding box around the whole table with extra space
-
-    // Define header columns
+    // Define table headers
     const headers = ['Name', 'PS Number', 'Meal', 'Department', 'Date', 'Sign'];
-    let xPosition = startX;
+    let startX = 50, startY = 100, columnWidth = 80, signColumnWidth = 100, rowHeight = 40;
+    const totalWidth = columnWidth * 5 + signColumnWidth;
 
-    // Draw the headers, and align text to the center of each field
-    headers.forEach((header, index) => {
-      doc.fontSize(12).text(header, xPosition, startY, { width: index === 5 ? signColumnWidth : columnWidth, align: 'center' });
-      xPosition += (index === 5) ? signColumnWidth : columnWidth;
+    // Draw table box
+    doc.rect(startX - 10, startY - 10, totalWidth + 20, (bookings.length * rowHeight) + 60).stroke();
+
+    // Draw headers
+    headers.forEach((header, i) => {
+      doc.fontSize(12).text(header, startX + (i * columnWidth), startY, { width: i === 5 ? signColumnWidth : columnWidth, align: 'center' });
     });
 
-    // Horizontal line after the header row
     doc.moveTo(startX - 10, startY + rowHeight).lineTo(startX + totalWidth + 10, startY + rowHeight).stroke();
+    let yPosition = startY + rowHeight;
 
-    let yPosition = startY + rowHeight;  // Start drawing rows after the header
-
-    // Loop through bookings and add them to the table
-    bookings.forEach((booking) => {
-      xPosition = startX;
-
-      // Add each field, ensuring text is centered in the field with padding
+    // Fill table with booking data
+    bookings.forEach(booking => {
+      let xPosition = startX;
       doc.text(booking.name, xPosition, yPosition + 10, { width: columnWidth, align: 'center' });
       xPosition += columnWidth;
-
       doc.text(booking.psNumber, xPosition, yPosition + 10, { width: columnWidth, align: 'center' });
       xPosition += columnWidth;
-
       doc.text(booking.meal, xPosition, yPosition + 10, { width: columnWidth, align: 'center' });
       xPosition += columnWidth;
-
       doc.text(booking.department, xPosition, yPosition + 10, { width: columnWidth, align: 'center' });
       xPosition += columnWidth;
-
-      // Format date to show only the date (without time)
-      const formattedDate = moment(booking.date).format('YYYY-MM-DD');
-      doc.text(formattedDate, xPosition, yPosition + 10, { width: columnWidth, align: 'center' });
+      doc.text(moment(booking.date).format('YYYY-MM-DD'), xPosition, yPosition + 10, { width: columnWidth, align: 'center' });
       xPosition += columnWidth;
-
-      // "Sign" column (empty for signatures)
       doc.text('', xPosition, yPosition + 10, { width: signColumnWidth, align: 'center' });
 
-      // Move to the next row
       yPosition += rowHeight;
-
-      // Draw horizontal line after each row
       doc.moveTo(startX - 10, yPosition).lineTo(startX + totalWidth + 10, yPosition).stroke();
     });
 
-    // Draw final closing line at the bottom (after the last row)
     doc.moveTo(startX - 10, yPosition).lineTo(startX + totalWidth + 10, yPosition).stroke();
-
     doc.end();
   } catch (error) {
     console.error("Error generating PDF:", error);
