@@ -38,7 +38,7 @@ const Admin = () => {
             const response = await axios.get(`${process.env.REACT_APP_API_URL}/bookings/download`, {
                 responseType: 'blob',
             });
-
+            console.log('PDF Data:', response.data);
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
