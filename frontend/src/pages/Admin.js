@@ -9,9 +9,17 @@ const Admin = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/login'); // Redirect if not logged in
+            return;
+        }
+
         const fetchBookings = async () => {
             try {
-                const response = await axios.get(`${process.env.REACT_APP_API_URL}/bookings`);
+                const response = await axios.get(`${process.env.REACT_APP_API_URL}/bookings`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
                 setBookings(response.data);
 
                 const breakfastCount = response.data.filter(b => b.meal === 'Breakfast').length;
