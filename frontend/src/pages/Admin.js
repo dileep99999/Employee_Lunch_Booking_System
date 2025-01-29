@@ -15,11 +15,11 @@ const Admin = () => {
         }
 
         const fetchBookings = async () => {
-            try {
-                const response = await axios.get("http://localhost:5000/bookings", {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                setBookings(response.data);
+           try {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/bookings`);
+            setBookings(response.data); // Set the fetched bookings
+          }
+               
 
                 const breakfastCount = response.data.filter(b => b.meal === 'Breakfast').length;
                 const lunchCount = response.data.filter(b => b.meal === 'Lunch').length;
