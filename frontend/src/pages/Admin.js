@@ -2,24 +2,17 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './Admin.css';
+
 const Admin = () => {
     const [bookings, setBookings] = useState([]);
     const [counts, setCounts] = useState({ breakfast: 0, lunch: 0 });
     const navigate = useNavigate();
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            navigate('/login'); // Redirect if not logged in
-            return;
-        }
-
         const fetchBookings = async () => {
-           try {
-            const response = await axios.get(`${process.env.REACT_APP_API_URL}/bookings`);
-            setBookings(response.data); // Set the fetched bookings
-          }
-               
+            try {
+                const response = await axios.get(`${process.env.REACT_APP_API_URL}/bookings`);
+                setBookings(response.data);
 
                 const breakfastCount = response.data.filter(b => b.meal === 'Breakfast').length;
                 const lunchCount = response.data.filter(b => b.meal === 'Lunch').length;
@@ -30,26 +23,25 @@ const Admin = () => {
         };
 
         fetchBookings();
-    }, [navigate]);
+    }, []);
 
     const downloadPDF = async () => {
         try {
-          const response = await axios.get("http://localhost:5000/bookings/download", {
-            responseType: 'blob',
-          });
-      
-          const url = window.URL.createObjectURL(new Blob([response.data]));
-          const link = document.createElement('a');
-          link.href = url;
-          link.setAttribute('download', 'bookings_report.pdf');
-          document.body.appendChild(link);
-          link.click();
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/bookings/download`, {
+                responseType: 'blob',
+            });
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'bookings_report.pdf');
+            document.body.appendChild(link);
+            link.click();
         } catch (error) {
-          console.error('Error downloading PDF:', error);
+            console.error('Error downloading PDF:', error);
         }
-      };
-      
-      
+    };
+
     return (
         <div>
             <h1>Admin Panel</h1>
