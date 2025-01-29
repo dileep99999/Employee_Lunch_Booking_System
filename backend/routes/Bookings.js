@@ -97,6 +97,7 @@ router.get("/counts", async (req, res) => {
 
 // Download bookings as PDF
 router.get("/download", async (req, res) => {
+  console.log("Download route triggered");  
   try {
     const currentTime = moment();
     const cutoffTime = moment().set({ hour: 14, minute: 0, second: 0 }); // 2:00 PM cutoff
