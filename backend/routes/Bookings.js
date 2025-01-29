@@ -112,6 +112,8 @@ router.get("/download", async (req, res) => {
       startDate = moment().startOf("day").add(1, "days").set({ hour: 14, minute: 0, second: 0 }); // 30th 2:00 PM onward
       endDate = moment().startOf("day").add(2, "days").set({ hour: 13, minute: 59, second: 59 }); // 31st 1:59 PM
     }
+    console.log("Start Date:", startDate.toISOString());
+    console.log("End Date:", endDate.toISOString());
 
     // Fetch bookings between startDate and endDate
     const bookings = await Booking.find({
